@@ -2,7 +2,7 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>حاسبة المساحات + تحويل الوحدات</title>
+<title>حاسبة المساحات الشاملة</title>
 <style>
 body {
     font-family: Arial;
@@ -14,7 +14,7 @@ body {
     background: white;
     padding: 20px;
     border-radius: 10px;
-    max-width: 400px;
+    max-width: 450px;
     margin: auto;
 }
 input, select, button {
@@ -24,13 +24,13 @@ input, select, button {
     font-size: 16px;
 }
 button {
-    background: #ff6600;
+    background: #007bff;
     color: white;
     border: none;
     cursor: pointer;
 }
 button:hover {
-    background: #cc5200;
+    background: #0056b3;
 }
 #result {
     margin-top: 15px;
@@ -42,52 +42,126 @@ button:hover {
 <body>
 
 <div class="box">
-<h2>حاسبة المساحات + تحويل الوحدات</h2>
+<h2>حاسبة المساحات الشاملة</h2>
 
-<input type="number" id="value" placeholder="أدخل القيمة">
-<br>
+<select id="shape" onchange="updateInputs()">
+    <option value="triangle">مثلث</option>
+    <option value="square">مربع</option>
+    <option value="rectangle">مستطيل</option>
+    <option value="circle">دائرة</option>
+</select>
+
+<div id="inputs"></div>
+
 <select id="fromUnit">
+    <option value="mm">مم²</option>
     <option value="cm">سم²</option>
     <option value="m">م²</option>
     <option value="km">كم²</option>
 </select>
 <select id="toUnit">
+    <option value="mm">مم²</option>
     <option value="cm">سم²</option>
     <option value="m">م²</option>
     <option value="km">كم²</option>
 </select>
+
 <br>
-<button onclick="convert()">حول المساحة</button>
+<button onclick="calculate()">احسب المساحة</button>
 
 <div id="result"></div>
 </div>
 
 <script>
-function convert() {
-    let value = parseFloat(document.getElementById("value").value);
+function updateInputs() {
+    let shape = document.getElementById("shape").value;
+    let inputs = document.getElementById("inputs");
+    inputs.innerHTML = "";
+
+    if (shape === "triangle") {
+        inputs.innerHTML = `
+            <input type="number" id="base" placeholder="القاعدة">
+            <input type="number" id="height" placeholder="الارتفاع">
+        `;
+    } else if (shape === "square") {
+        inputs.innerHTML = `
+            <input type="number" id="side" placeholder="طول الضلع">
+        `;
+    } else if (shape === "rectangle") {
+        inputs.innerHTML = `
+            <input type="number" id="length" placeholder="الطول">
+            <input type="number" id="width" placeholder="العرض">
+        `;
+    } else if (shape === "circle") {
+        inputs.innerHTML = `
+            <input type="number" id="radius" placeholder="نصف القطر">
+        `;
+    }
+}
+
+function calculate() {
+    let shape = document.getElementById("shape").value;
+    let area = 0;
+
+    // حساب المساحة
+    if (shape === "triangle") {
+        let b = parseFloat(document.getElementById("base").value);
+        let h = parseFloat(document.getElementById("height").value);
+        if (isNaN(b) || isNaN(h) || b <=0 || h<=0) {showError(); return;}
+        area = 0.5 * b * h;
+    } else if (shape === "square") {
+        let s = parseFloat(document.getElementById("side").value);
+        if (isNaN(s) || s <=0) {showError(); return;}
+        area = s * s;
+    } else if (shape === "rectangle") {
+        let l = parseFloat(document.getElementById("length").value);
+        let w = parseFloat(document.getElementById("width").value);
+        if (isNaN(l) || isNaN(w) || l <=0 || w<=0) {showError(); return;}
+        area = l * w;
+    } else if (shape === "circle") {
+        let r = parseFloat(document.getElementById("radius").value);
+        if (isNaN(r) || r <=0) {showError(); return;}
+        area = Math.PI * r * r;
+    }
+
+    // تحويل الوحدات
     let from = document.getElementById("fromUnit").value;
     let to = document.getElementById("toUnit").value;
 
-    if (isNaN(value) || value <= 0) {
-        document.getElementById("result").innerText = "أدخل قيمة صحيحة!";
-        return;
+    // تحويل كل شيء إلى م²
+    let areaInM = 0;
+    switch(from) {
+        case "mm": areaInM = area / 1000000; break;
+        case "cm": areaInM = area / 10000; break;
+        case "m": areaInM = area; break;
+        case "km": areaInM = area * 1000000; break;
     }
 
-    // تحويل كل شيء إلى م² أولاً
-    let valueInM = 0;
-    if (from === "cm") valueInM = value / 10000; // سم² → م²
-    else if (from === "m") valueInM = value;     // م² → م²
-    else if (from === "km") valueInM = value * 1000000; // كم² → م²
-
     // التحويل إلى الوحدة المطلوبة
-    let finalValue = 0;
-    if (to === "cm") finalValue = valueInM * 10000;
-    else if (to === "m") finalValue = valueInM;
-    else if (to === "km") finalValue = valueInM / 1000000;
+    let finalArea = 0;
+    switch(to) {
+        case "mm": finalArea = areaInM * 1000000; break;
+        case "cm": finalArea = areaInM * 10000; break;
+        case "m": finalArea = areaInM; break;
+        case "km": finalArea = areaInM / 1000000; break;
+    }
 
-    document.getElementById("result").innerText =
-        "النتيجة: " + finalValue.toFixed(4) + " " + to + "²";
+    // حذف الفاصلة إذا عدد صحيح
+    if (Number.isInteger(finalArea)) {
+        finalArea = finalArea.toString();
+    } else {
+        finalArea = finalArea.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+    }
+
+    document.getElementById("result").innerText = "المساحة = " + finalArea + " " + to + "²";
 }
+
+function showError() {
+    document.getElementById("result").innerText = "أدخل قيم صحيحة أكبر من صفر!";
+}
+
+// تهيئة صفحة الإدخالات
+updateInputs();
 </script>
 
 </body>
